@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='takes input.csv file and turns it 
 parser.add_argument(
     '--time',
     default=1,
-    help='time argument will define length of run in minutes'
+    help='time argument will define length of run in minutes --time=2'
 )
 args = parser.parse_args()
 
@@ -59,6 +59,7 @@ runtime_length = 60 * int(args.time)
 with open('inputs.csv') as f:
     reader = csv.DictReader(f)
     personnel_bids = [r for r in reader if "," in r['Duty Officer']]
+    #Personnel_bids is the CSV - It's a list of dicts {name,2/1,2/2,supernumerary}
 
 for line in personnel_bids:
     if line.get('Supernumerary (Y|N)')=='30':
@@ -84,10 +85,11 @@ i=0
 calendar_length = len(date_list)
 
 while True:
+    ### Turn off and break the loop if the runtime has been reached
     if time()-start_time>=runtime_length:
         print("---------DONE-----------")
         break
-    i+=1
+    i+=1  #counts the number of iterations
     temp_score = 0
     temp_bill = {}
     temp_personnel = personnel_bids[:]
@@ -96,8 +98,10 @@ while True:
     random.shuffle(temp_personnel)
     #print(temp_personnel[0]['Duty Officer'])
     for num,day in enumerate(date_list):
+        #if you can't possibly make a BETTER score than already exists, STOP
         if (calendar_length-num)*2+temp_score<=max_score:
             break
+        #Sort personnel by the bid value for that day
         temp_personnel.sort(key=lambda x: x[day],reverse=True)
         for n in range(len(temp_personnel)):
             if temp_personnel[n].get('assigned',0)<max_assignments:
