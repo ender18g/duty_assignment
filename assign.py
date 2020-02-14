@@ -29,16 +29,17 @@ def make_watchbill():
         date_obj = date(year,month,day)
         best_dict[k].update({'date':date_obj})
         best_dict[k].update({'full_date':date_obj.strftime("%a, %b %d")})
-
-    supernumerary.update({'full_date':"Supernumerary",'bid':'Y','date':date(2050,12,1)})
-    best_dict.update({'super':supernumerary})
+    
+    for s in range(len(supernumerary)):
+        supernumerary[s].update({'full_date':"Supernumerary " + str(s+1),'bid':'Y','date':date(2050,12,s+1)})
+        best_dict.update({'super'+str(s):supernumerary[s]})
 
     output_list = [v for v in best_dict.values()]
     output_list.sort(key=lambda x: x.get('date',0))
 
     output = "Date\tName\tRank\tEmail\tDept\t\tAssignments\tBid\n"
     for v in output_list:
-        output = output + f"\'{v['full_date']}\'\t\'{v['Duty Officer']}\'\t{v['Rank|Rate']}\t{v['Email']}\t{v['Dept']}\t\t{v['assigned']}\t{v['bid']}\n"
+        output = output + f"\'{v['full_date']}\t\'{v['Duty Officer']}\t{v['Rank|Rate']}\t{v['Email']}\t{v['Dept']}\t\t{v['assigned']}\t{v['bid']}\n"
     for line in best_leftover:
         output += "\t\t\t\t\t\t\t" + line.get('Duty Officer','-') + "\n"
     # print(output)
@@ -55,7 +56,7 @@ start_time = time()
 
 year = (date.today()+timedelta(days=30)).year
 runtime_length = 60 * int(args.time)
-
+supernumerary = []
 
 with open('inputs.csv') as f:
     reader = csv.DictReader(f)
@@ -64,7 +65,7 @@ with open('inputs.csv') as f:
 
 for line in personnel_bids:
     if line.get('Supernumerary (Y|N)')=='30':
-        supernumerary=line
+        supernumerary.append(line)
 
 #Filter and make a list of all of the dates
 date_list = [k for k in personnel_bids[0].keys() if "/" in k]
@@ -73,7 +74,7 @@ date_list = [k for k in personnel_bids[0].keys() if "/" in k]
 
 print("\n\n\n\n\n\n")
 for i in personnel_bids:
-    i['assigned']=make_int(i.get('assigned',0))
+    i['assigned']=make_int(i.get('Assigned',0))
     for k,v in i.items():
         if "/" in k:
             i[k]=make_int(i.get(k,0))
