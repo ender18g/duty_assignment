@@ -17,6 +17,35 @@ parser.add_argument(
 args = parser.parse_args()
 
 
+def make_cal_link(output_list):
+    #http://www.google.com/calendar/event?action=TEMPLATE&dates=20200325T20200326&text=E%26W%20Duty&location=&details=Take%20from%20Mike%20Byrge%0A%0AGive%20to%20Blake%20Smith
+    one_day = timedelta(days=1)
+    for i in range(len(output_list)):
+        if output_list[i].get('full_date')=='Supernumerary':
+            continue
+        start_day=output_list[i].get('date').strftime("%Y%m%d")
+        end_day= (output_list[i].get('date')+one_day).strftime("%Y%m%d")
+        if i== 0:
+            prior_email='unknown'
+        else:
+            prior_email=output_list[i-1].get("Email")
+        if i==len(output_list)-1:
+            next_email = 'unknown'
+        else:
+            next_email=output_list[i+1].get("Email")
+        link = (
+            f"https://calendar.google.com/calendar/r/eventedit?"
+            f"dates={start_day}/{end_day}&text=E%26W+Duty&location&"
+            f"details=Take+from+{prior_email}%0A%0AGive+to+{next_email}"
+            f"&sf=true"
+        )
+        link = f'=HYPERLINK("{link}","Add to Google Calendar")'
+        output_list[i].update({'link':link})
+    return output_list
+
+
+
+
 def make_int(s):
     s.strip()
     return int(s) if s else 0
@@ -34,21 +63,31 @@ def make_watchbill():
         supernumerary[s].update({'full_date':"Supernumerary " + str(s+1),'bid':'Y','date':date(2050,12,s+1)})
         best_dict.update({'super'+str(s):supernumerary[s]})
 
+    ## Output list is a list of dicts
+    ## the dicts include full_date Duty Officer Rank|Rate Email Dept assigned bid link
+
     output_list = [v for v in best_dict.values()]
     output_list.sort(key=lambda x: x.get('date',0))
 
-    output = "Date\tName\tRank\tEmail\tDept\t\tAssignments\tBid\n"
+    output_list = make_cal_link(output_list)
+
+
+
+    clip_output = "Date\tName\tRank\tEmail\tDept\t\tAssignments\tBid\tCalendar\n"
+    print_output = "Date\tName\tRank\tEmail\tDept\t\tAssignments\tBid\n"
     for v in output_list:
-        output = output + f"\'{v['full_date']}\t\'{v['Duty Officer']}\t{v['Rank|Rate']}\t{v['Email']}\t{v['Dept']}\t\t{v['assigned']}\t{v['bid']}\n"
+        clip_output = clip_output + f"\'{v['full_date']}\t\'{v['Duty Officer']}\t{v['Rank|Rate']}\t{v['Email']}\t{v['Dept']}\t\t{v['assigned']}\t{v['bid']}\t{v['link']}\n"
+        print_output = print_output + f"\'{v['full_date']}\t\'{v['Duty Officer']}\t{v['Rank|Rate']}\t{v['Email']}\t{v['Dept']}\t\t{v['assigned']}\t{v['bid']}\n"
     for line in best_leftover:
-        output += "\t\t\t\t\t\t\t" + line.get('Duty Officer','-') + "\n"
+        clip_output += "\t\t\t\t\t\t\t" + line.get('Duty Officer','-') + "\n"
+        print_output += "\t\t\t\t\t\t\t" + line.get('Duty Officer','-') + "\n"
     # print(output)
     # print('\n')
     print('\n\n')
-    print(tabulate([my_row.split('\t') for my_row in output.splitlines()],headers='firstrow',
+    print(tabulate([my_row.split('\t') for my_row in print_output.splitlines()],headers='firstrow',
     tablefmt='github'))
     print(f"Max Score: {max_score} iterations: {iter_num} time: {floor(time()-start_time)} sec")
-    clipboard.copy(output)
+    clipboard.copy(clip_output)
 
 
 
