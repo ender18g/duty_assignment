@@ -39,7 +39,7 @@ def make_cal_link(output_list):
             f"details=Take+from+{prior_email}%0A%0AGive+to+{next_email}"
             f"&sf=true"
         )
-        link = f'=HYPERLINK("{link}","Add to Google Calendar")'
+        link = f'=HYPERLINK("{link}","Calendar - {output_list[i].get("Duty Officer")}")'
         output_list[i].update({'link':link})
     return output_list
 
