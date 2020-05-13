@@ -7,6 +7,7 @@ import argparse
 from math import floor
 from tabulate import tabulate
 import copy
+from sheets import pull_sheet
 
 parser = argparse.ArgumentParser(description='takes input.csv file and turns it into an optimized watchbill')
 parser.add_argument(
@@ -90,6 +91,8 @@ def make_watchbill():
     clipboard.copy(clip_output)
 
 
+##Start of main program
+
 
 start_time = time()
 
@@ -97,10 +100,23 @@ year = (date.today()+timedelta(days=30)).year
 runtime_length = 60 * int(args.time)
 supernumerary = []
 
-with open('inputs.csv') as f:
-    reader = csv.DictReader(f)
-    personnel_bids = [r for r in reader if "," in r['Duty Officer']]
-    #Personnel_bids is the CSV - It's a list of dicts {name,2/1,2/2,supernumerary}
+# with open('inputs.csv') as f:
+#     reader = csv.DictReader(f)
+#     personnel_bids = [r for r in reader if "," in r['Duty Officer']]
+#     #Personnel_bids is the CSV - It's a list of dicts {name,2/1,2/2,supernumerary}
+
+ss_id = '1DIQeQAnnn6cUuRCi2i1XvBbAeJwdbsN4Ba2cbV1Gkgw'
+tab_range = 'Inputs!A:AO'
+
+sheets_array = pull_sheet(ss_id,tab_range)
+personnel_bids=[]
+sheets_columns = sheets_array[0]
+for line in sheets_array:
+    if line and "," in line[0]:
+        personnel_bids.append(dict(zip(sheets_columns,line)))
+
+
+
 
 for line in personnel_bids:
     if line.get('Supernumerary (Y|N)')=='30':
