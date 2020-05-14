@@ -12,8 +12,8 @@ from google.auth.transport.requests import Request
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
 
 # The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1DIQeQAnnn6cUuRCi2i1XvBbAeJwdbsN4Ba2cbV1Gkgw'
-SAMPLE_RANGE_NAME = 'Inputs!A:AO'
+sample_id = '1DIQeQAnnn6cUuRCi2i1XvBbAeJwdbsN4Ba2cbV1Gkgw'
+sample_range = 'Inputs!A:AO'
 
 def pull_sheet(ss_id,tab_range):
     """Shows basic usage of the Sheets API.
@@ -57,5 +57,5 @@ def pull_sheet(ss_id,tab_range):
 
 
 if __name__ == "__main__":
-  results = pull_sheet()
+  results = pull_sheet(sample_id,sample_range)
   print(results)
