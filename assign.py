@@ -8,6 +8,7 @@ from math import floor
 from tabulate import tabulate
 import copy
 from sheets import pull_sheet
+import re
 
 parser = argparse.ArgumentParser(description='takes input.csv file and turns it into an optimized watchbill')
 parser.add_argument(
@@ -45,17 +46,35 @@ def make_cal_link(output_list):
     return output_list
 
 
+def make_points():
+    name_points = [];
+    for n in personnel_bids:
+        temp_list = [n['Duty Officer'],0]
+        for v in best_dict.values():
+            if v['Duty Officer']== temp_list[0]:
+                temp_list[1]+=1
+        name_points.append(temp_list)
+    print('\n\n POINTS \n\n')
+    #print(tabulate(name_points,headers=['Name','Points']))
+    for n in name_points:
+        print(f"{n[0]}:{n[1]}")
+
+
+    
+    
+
 
 
 def make_int(s):
-    s.strip()
+    if type(s)==str:
+        s.strip()
     return int(s) if s else 0
 
 def make_watchbill():
     output_list=[]
     for k,v in best_dict.items():
-        month = int(k.split("/")[0])
-        day = int(k.split("/")[1])
+        m = re.search(r'(\d+)/(\d+)\s',k)
+        month,day = [int(m.group(1)),int(m.group(2))]
         date_obj = date(year,month,day)
         best_dict[k].update({'date':date_obj})
         best_dict[k].update({'full_date':date_obj.strftime("%a, %b %d")})
@@ -106,7 +125,7 @@ supernumerary = []
 #     #Personnel_bids is the CSV - It's a list of dicts {name,2/1,2/2,supernumerary}
 
 ss_id = '1DIQeQAnnn6cUuRCi2i1XvBbAeJwdbsN4Ba2cbV1Gkgw'
-tab_range = 'Inputs!A:AO'
+tab_range = 'Inputs!A:AS'
 
 sheets_array = pull_sheet(ss_id,tab_range)
 personnel_bids=[]
@@ -114,9 +133,6 @@ sheets_columns = sheets_array[0]
 for line in sheets_array:
     if line and "," in line[0]:
         personnel_bids.append(dict(zip(sheets_columns,line)))
-
-
-
 
 for line in personnel_bids:
     if line.get('Supernumerary (Y|N)')=='30':
@@ -126,6 +142,8 @@ for line in personnel_bids:
 date_list = [k for k in personnel_bids[0].keys() if "/" in k]
 #create a dictionary of dates
 #date_dict = {k:None for k in date_list}
+
+print(date_list)
 
 print("\n\n\n\n\n\n")
 for i in personnel_bids:
@@ -141,6 +159,9 @@ max_assignments=1
 i=0
 calendar_length = len(date_list)
 
+TAD_bonus = 3;
+
+
 while True:
     ### Turn off and break the loop if the runtime has been reached
     if time()-start_time>=runtime_length:
@@ -152,6 +173,9 @@ while True:
     temp_bill = {}
     temp_personnel = []
     temp_personnel = copy.deepcopy(personnel_bids)
+    temp_personnel[:] = [d for d in temp_personnel if d.get('Qualified').lower()=='yes' or d.get('Qualified').lower()=='eom']
+    # Remove people if not qualified:
+ 
     #shuffle the list
     random.shuffle(date_list)
     random.shuffle(temp_personnel)
@@ -164,7 +188,7 @@ while True:
         if (calendar_length-num)*2+temp_score<=max_score:
             break
         #Sort personnel by the bid value for that day 2 to 0
-        temp_personnel.sort(key=lambda x: x[day],reverse=True)
+        temp_personnel.sort(key=lambda x: x.get(day,0)+ int(x.get('TAD',0))*TAD_bonus,reverse=True)
         #sort personnel by number of assignments from 0 to 2
         temp_personnel.sort(key=lambda x: x['assigned'],reverse=False)
         #iterate through all personnel
@@ -172,11 +196,12 @@ while True:
             #if this person hasn't reached the max number of assignments
             if temp_personnel[n]['assigned']<max_assignments:
                 #if this person did not give this day a 1 (do not assign)
-                if temp_personnel[n].get(day,1)!=1:
+                if temp_personnel[n].get(day,0)!=1:
 
                     bid_value = temp_personnel[n].get(day)
                     #add their bid value to our overall points
-                    temp_score=temp_score + bid_value
+                    if bid_value:
+                        temp_score=temp_score + bid_value
                     #mark this person as being assigned
                     temp_personnel[n]['assigned']+=1
                     #then assign this person to the day
@@ -196,3 +221,4 @@ while True:
             best_leftover = [p for p in temp_personnel if p['assigned']==0]
             iter_num = i
             make_watchbill()
+            make_points()
